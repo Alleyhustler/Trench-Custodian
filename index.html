@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRENCH CUSTODIAN | SENTRY_ONLINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Victor+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --glow: #b6bdb7; /* Tactical Green */
+            --alert: #ff003c; /* Breach Red */
+            --bg: #050607;
+            --panel: rgba(0, 0, 0, 0.85);
+            --border: rgba(37, 41, 38, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* Custom cursor takes over */
+  font-family: "Victor Mono", monospace;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* No scroll, everything is a dashboard */
+            background-color: var(--bg);
+            color: var(--glow);
+        }
+
+        /* --- Background Layers --- */
+        .trench-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('background.png');
+            background-size: cover;
+            background-position: center;
+            filter: grayscale(100%) contrast(120%);
+            z-index: -2;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Vignette/Night Vision Effect */
+        .overlay-vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 30%, black 90%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- Grid Layout (Command Center) --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 100px 1fr 150px;
+            height: 100vh;
+            width: 100vw;
+            padding: 20px;
+            gap: 15px;
+        }
+
+        /* --- Modular Panels --- */
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            position: relative;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(84, 116, 92, 0.05);
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--glow);
+            animation: scanline 3s infinite linear;
+            opacity: 0.3;
+        }
+
+        /* --- Header / Title Area --- */
+        .header-panel {
+            grid-column: 1 / 4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--glow);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 0 10px var(--glow));
+        }
+
+        .title-group h1 {
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: -5px;
+        }
+
+        .title-group span {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+
+        /* --- Center Combat Display --- */
+        .main-display {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            background: transparent;
+        }
+
+        .crosshair-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slogan-overlay {
+            position: absolute;
+            bottom: -40px;
+            text-align: center;
+            width: 100%;
+            font-weight: bold;
+            letter-spacing: 5px;
+            animation: blink 2s infinite;
+        }
+
+        /* --- Lateral Data Feeds --- */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .data-stream {
+            font-size: 0.65rem;
+            line-height: 1.4;
+            color: var(--glow);
+            opacity: 0.8;
+        }
+
+        .tag {
+            background: var(--glow);
+            color: black;
+            padding: 2px 5px;
+            font-size: 0.6rem;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* --- Interactive Scanning Cursor --- */
+        #scanner-cursor {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border: 1px solid var(--glow);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            mix-blend-mode: difference;
+        }
+
+        #scanner-cursor::before, #scanner-cursor::after {
+            content: "";
+            position: absolute;
+            background: var(--glow);
+        }
+
+        #scanner-cursor::before { width: 100%; height: 1px; }
+        #scanner-cursor::after { width: 1px; height: 100%; }
+
+        /* --- Buttons --- */
+        .btn-action {
+            padding: 15px 30px;
+            border: 1px solid var(--glow);
+            background: transparent;
+            color: var(--glow);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: bold;
+            transition: 0.3s;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .btn-action:hover {
+            background: var(--glow);
+            color: black;
+            box-shadow: 0 0 30px var(--glow);
+        }
+
+        /* --- Animations --- */
+        @keyframes scanline {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .breach-alert {
+            color: var(--alert) !important;
+            border-color: var(--alert) !important;
+        }
+
+        /* Mobile warning */
+        @media (max-width: 900px) {
+            .dashboard { display: flex; flex-direction: column; overflow-y: auto; cursor: auto; }
+            #scanner-cursor { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scanner-cursor">
+        <div style="font-size: 8px; position: absolute; bottom: -15px; width: 100px; text-align: center;">ID: UNKNOWN_TRNCH</div>
+    </div>
+
+    <div class="trench-bg" id="bg-img"></div>
+    <div class="overlay-vignette"></div>
+
+    <div class="dashboard">
+        
+        <!-- Header -->
+        <header class="panel header-panel">
+            <div class="brand">
+                <img src="Progetto senza titolo (4).png" alt="logo" class="logo-img">
+                <div class="title-group">
+                    <h1>Trench Custodian</h1>
+                    <span>SENTRY PROTOCOL V.2.04 — ACTIVE</span>
+                </div>
+            </div>
+            <div id="clock" style="font-size: 1.5rem; font-weight: bold;">00:00:00</div>
+        </header>
+
+        <!-- Left Sidebar: Monitoring -->
+        <div class="sidebar">
+            <div class="panel" style="flex: 1;">
+                <h3 style="font-size: 0.8rem; margin-bottom: 10px;">PERIMETER_LOGS</h3>
+                <div class="data-stream" id="log-left">
+                    > Scanning sector A...<br>
+                    > No heat signatures...<br>
+                    > Wind speed: 14km/h...<br>
+                </div>
+            </div>
+            <div class="panel" style="flex: 1;">
+                <h3 style="font-size: 0.8rem; margin-bottom: 10px;">SURVIVAL_STATUS</h3>
+                <div class="data-stream">
+                    [OXYGEN]: 98%<br>
+                    [MORALE]: STABLE<br>
+                    [AMMO]: FULL<br>
+                    [RESERVES]: DEPLETED
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Viewport -->
+        <main class="main-display">
+            <div class="crosshair-container">
+                <!-- Large Rotating Tactical Ring -->
+                <svg width="400" height="400" style="position:absolute; animation: spin 20s linear infinite;">
+                    <circle cx="200" cy="200" r="190" stroke="#00ff41" stroke-width="1" fill="none" stroke-dasharray="20 10" />
+                </svg>
+                <img src="Testo del paragrafo (5) (1) - Copy.png" style="width: 350px; opacity: 0.5; filter: drop-shadow(0 0 20px var(--glow));" alt="center-logo">
+                <div class="slogan-overlay">GUARDING EVERY INCH</div>
+            </div>
+            <a href="https://twitter.com/placeholder" class="btn-action" target="_blank">Establish Connection (X)</a>
+        </main>
+
+        <!-- Right Sidebar: Intelligence -->
+        <div class="sidebar">
+            <div class="panel" style="flex: 1.5;">
+                <h3 style="font-size: 0.8rem; margin-bottom: 10px;">THREAT_INTEL</h3>
+                <div id="intel-feed" class="data-stream">
+                    <span class="tag">INFO</span> Trench depth: 4.5m<br>
+                    <span class="tag">WARN</span> Mud levels rising<br>
+                    <span class="tag">INFO</span> Custodian online<br>
+                </div>
+            </div>
+            <div class="panel" id="status-box" style="flex: 0.5; display: flex; align-items: center; justify-content: center; text-align: center;">
+                <div style="font-size: 1.2rem; font-weight: bold;">STATUS: <span id="status-text">SECURE</span></div>
+            </div>
+        </div>
+
+        <!-- Bottom Bar: Signals -->
+        <footer class="panel" style="grid-column: 1 / 4; display: flex; align-items: center; justify-content: space-around;">
+            <div class="data-stream">FREQ: 144.00MHz [ENCRYPTED]</div>
+            <div class="data-stream" style="color: var(--alert)">SIGNAL INTERCEPTED: "They are coming..."</div>
+            <div class="data-stream">LOC: 48.8566° N, 2.3522° E</div>
+        </footer>
+    </div>
+
+    <script>
+        const cursor = document.getElementById('scanner-cursor');
+        const bgImg = document.getElementById('bg-img');
+        const statusText = document.getElementById('status-text');
+        const statusBox = document.getElementById('status-box');
+        const intelFeed = document.getElementById('intel-feed');
+
+        // Movement Interaction
+        document.addEventListener('mousemove', (e) => {
+            // Move Cursor
+            cursor.style.left = e.clientX - 50 + 'px';
+            cursor.style.top = e.clientY - 50 + 'px';
+
+            // Parallax Background
+            const x = (window.innerWidth / 2 - e.clientX) / 50;
+            const y = (window.innerHeight / 2 - e.clientY) / 50;
+            bgImg.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+
+            // Chance to trigger "Breach Warning"
+            if(Math.random() > 0.995) {
+                triggerBreach();
+            }
+        });
+
+        function triggerBreach() {
+            statusText.innerText = "BREACH DETECTED";
+            statusBox.classList.add('breach-alert');
+            
+            const alertLog = document.createElement('div');
+            alertLog.innerHTML = `<span class="tag" style="background: #ff003c">ALERT</span> Movement in Sector ${Math.floor(Math.random()*9)}!`;
+            intelFeed.prepend(alertLog);
+
+            setTimeout(() => {
+                statusText.innerText = "SECURE";
+                statusBox.classList.remove('breach-alert');
+            }, 2000);
+        }
+
+        // Live Clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        // Auto-generating Logs
+        setInterval(() => {
+            const logs = [
+                "> Scanning signal...",
+                "> Calibration complete.",
+                "> Pressure plate active.",
+                "> Guardian drone returning.",
+                "> No movement detected.",
+                "> Encryption keys rotated."
+            ];
+            const logArea = document.getElementById('log-left');
+            const newLog = logs[Math.floor(Math.random()*logs.length)];
+            logArea.innerHTML = `> ${newLog}<br>` + logArea.innerHTML.split('<br>').slice(0, 5).join('<br>');
+        }, 3000);
+
+        // Spin animation for the SVG
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes spin { from {transform:rotate(0deg);} to {transform:rotate(360deg);} }`;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
